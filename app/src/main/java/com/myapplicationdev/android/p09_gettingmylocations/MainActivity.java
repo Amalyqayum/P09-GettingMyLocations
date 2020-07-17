@@ -1,0 +1,98 @@
+package com.myapplicationdev.android.p09_gettingmylocations;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.PermissionChecker;
+
+import android.Manifest;
+import android.content.Intent;
+import android.location.Location;
+import android.os.Bundle;
+import android.os.Environment;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+
+public class MainActivity extends AppCompatActivity {
+
+    Button btnStart, btnStop, btnCheck;
+    TextView tvLat, tvLong;
+    FusedLocationProviderClient client;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        btnStart = findViewById(R.id.btnStart);
+        btnStop = findViewById(R.id.btnStop);
+        btnCheck = findViewById(R.id.btnCheck);
+        tvLat = findViewById(R.id.tvLat);
+        tvLong = findViewById(R.id.tvLong);
+
+        client = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+
+        Task<Location> task = client.getLastLocation();
+        if (checkPermission() == true) {
+            task.addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    //Get last known location.
+                    if (location != null) {
+                        tvLat.setText("Latitude: " + location.getLatitude());
+                        tvLong.setText("Longitude: " + location.getLongitude());
+                    } else {
+                        String msg = "No last known location found";
+                        Toast.makeText(MainActivity.this,msg , Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
+        }
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, MyService.class);
+                startService(i);
+            }
+        });
+
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(MainActivity.this, MyService.class);
+                stopService(i);
+            }
+        });
+
+        final String folderLocation = Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyFolder";
+
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        client = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+
+    }
+    private boolean checkPermission(){
+        int permissionCheck_Coarse = ContextCompat.checkSelfPermission(
+                MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        int permissionCheck_Fine = ContextCompat.checkSelfPermission(
+                MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck_Coarse == PermissionChecker.PERMISSION_GRANTED
+                || permissionCheck_Fine == PermissionChecker.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
